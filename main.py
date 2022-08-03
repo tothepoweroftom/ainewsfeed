@@ -39,7 +39,7 @@ if not os.path.exists('images'):
 temp_dir = "./images"
 
 
-def getPicture():
+def getPicture(ind):
     date = datetime.date.today().strftime("%B %d, %Y")
     top_headlines = newsapi.get_top_headlines(
         sources="bbc-news",
@@ -47,41 +47,39 @@ def getPicture():
     )
     titles = []
     count = 0
-    for headline in top_headlines["articles"]:
-        print(headline["title"])
-        titles.append(headline["title"])
-        styles = ["A Soviet propoganda poster of ", "A beautiful painting by William Turner of ", "A vivid pencil sketch of ", "An abstract art representation of ", "A beautiful painting by Van Gogh ", "A generative digital artwork of" "A watercolour sketch of ", "A colourful Japanese etching of ", "A celtic artwork of", "A geometric artwork of ", "A minimalistic pointillism painting of ", "A paper collage artwork of "]        
-        prompt = random.choice(styles) + random.choice(titles)  + ", " + "trending on Artstation"
-        print(prompt)
-        prediction_generator = replicate.models.get("nightmareai/disco-diffusion").predict(
-            prompt=prompt,
-            steps="150"
+    headline = top_headlines["articles"][ind]
+    print(headline["title"])
+    titles.append(headline["title"])
+    styles = ["A Soviet propoganda poster of ", "A beautiful painting by William Turner of ", "A vivid pencil sketch of ", "An abstract art representation of ", "A beautiful painting by Van Gogh of ", "A generative digital artwork of " "A watercolour sketch of ", "A colourful Japanese etching of ", "A celtic artwork of", "A geometric artwork of ", "A minimalistic pointillism painting of ", "A paper collage artwork of "]        
+    prompt = random.choice(styles) + random.choice(titles)  + ", " + "trending on Artstation"
+    print(prompt)
+    prediction_generator = replicate.models.get("nightmareai/disco-diffusion").predict(
+        prompt=prompt,
+        steps="40",
+    )
+ 
+    for index, url in enumerate(prediction_generator):
+        print(url)
+        # construct filename
+        prefix = str(ind).zfill(4)  # 0001, 0002, etc.
+        uuid = url.split("/")[-2]
+        extension = url.split(".")[-1]  # jpg, png, etc
+        filename = f"{temp_dir}/{uuid}.{extension}"
 
-        )
-        count+=1
-        if count <=15:
-            for index, url in enumerate(prediction_generator):
-                print(url)
-                # construct filename
-                prefix = str(count).zfill(4)  # 0001, 0002, etc.
-                uuid = url.split("/")[-2]
-                extension = url.split(".")[-1]  # jpg, png, etc
-                filename = f"{temp_dir}/{prefix}.{extension}"
+        # download and save the file
+        if(index > 0):
+            data = requests.get(url)
+            image_data = data.content
 
-                # download and save the file
-                if(index == 7):
-                    data = requests.get(url)
-                    image_data = data.content
-
-                    bucket = storage.bucket()
-                    blob = bucket.blob(f"{date}/{prefix}.{extension}")
-                    blob.upload_from_string(
-                            image_data,
-                            content_type=f"image/{extension}"
-                        )
-                    # Opt : if you want to make public access from the URL
-                    blob.make_public()
-                    print("your file url", blob.public_url)
+            bucket = storage.bucket()
+            blob = bucket.blob(f"{date}/{uuid}.{extension}")
+            blob.upload_from_string(
+                    image_data,
+                    content_type=f"image/{extension}"
+                )
+            # Opt : if you want to make public access from the URL
+            blob.make_public()
+            print("your file url", blob.public_url)
           
 
 
@@ -96,7 +94,7 @@ def hello_world():
 
 
 if __name__ == "__main__":
-    getPicture()
+    getPicture(3)
     # app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
 # [END run_helloworld_service]
 # [END cloudrun_helloworld_service]
