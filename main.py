@@ -48,7 +48,6 @@ temp_dir = "./images"
 def getPicture():
     date = datetime.date.today().strftime("%B %d, %Y")
     top_headlines = newsapi.get_top_headlines(
-        sources="bbc-news",
         language="en",
     )
     titles = []
